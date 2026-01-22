@@ -19,7 +19,7 @@ export default function AnalyticsPage() {
       return
     }
 
-    if (session && (session.user as any)?.role !== 'ADMIN') {
+    if (session && session.user?.role !== 'ADMIN') {
       router.push('/')
       return
     }
