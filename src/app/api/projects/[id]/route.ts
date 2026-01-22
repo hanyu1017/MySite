@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
 
     const session = await getServerSession(authOptions)
-    const isAdmin = session && (session.user as any).role === 'ADMIN'
+    const isAdmin = session && session.user.role === 'ADMIN'
 
     if (!project.published && !isAdmin) {
       return NextResponse.json(
@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session || (session.user as any).role !== 'ADMIN') {
+    if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json(
         { error: '未授權' },
         { status: 401 }
@@ -77,7 +77,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session || (session.user as any).role !== 'ADMIN') {
+    if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json(
         { error: '未授權' },
         { status: 401 }

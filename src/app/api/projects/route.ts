@@ -20,7 +20,7 @@ const projectSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    const isAdmin = session && (session.user as any).role === 'ADMIN'
+    const isAdmin = session && session.user.role === 'ADMIN'
 
     const { searchParams } = new URL(request.url)
     const published = searchParams.get('published')
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session || (session.user as any).role !== 'ADMIN') {
+    if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json(
         { error: '未授權' },
         { status: 401 }

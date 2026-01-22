@@ -9,7 +9,7 @@ export function Header() {
   const { data: session } = useSession()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const isAdmin = session && (session.user as any)?.role === 'ADMIN'
+  const isAdmin = session && session.user?.role === 'ADMIN'
 
   return (
     <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md shadow-sm z-50">
