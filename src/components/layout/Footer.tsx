@@ -33,7 +33,7 @@ export function Footer() {
             </a>
           </div>
           <p className="text-gray-400 text-sm">
-            © {new Date().getFullYear()} MySite. All rights reserved.
+            © {new Date().getFullYear()} Author:Liu-Han,Yu. All rights reserved.
           </p>
         </div>
       </div>
