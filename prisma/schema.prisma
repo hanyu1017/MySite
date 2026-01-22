@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 用戶模型
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  role          Role      @default(VISITOR)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 關聯
+  sessions      Session[]
+  analytics     Analytics[]
+
+  @@index([email])
+}
+
+// 角色枚舉
+enum Role {
+  ADMIN
+  VISITOR
+}
+
+// 會話模型
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+// 專案模型
+model Project {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  content     String   @db.Text
+  thumbnail   String?
+  tags        String[]
+  githubUrl   String?
+  liveUrl     String?
+  order       Int      @default(0)
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published])
+  @@index([order])
+}
+
+// 分析模型 - 記錄用戶點擊和行為
+model Analytics {
+  id          String   @id @default(cuid())
+  userId      String?
+  event       String   // 事件類型: page_view, project_click, link_click 等
+  page        String?  // 頁面路徑
+  target      String?  // 目標元素（如專案ID、連結URL）
+  metadata    Json?    // 額外的元數據
+  userAgent   String?
+  ipAddress   String?
+  country     String?
+  city        String?
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([event])
+  @@index([createdAt])
+}
+
+// 個人資料模型
+model Profile {
+  id          String   @id @default(cuid())
+  name        String
+  title       String
+  bio         String   @db.Text
+  avatar      String?
+  email       String?
+  github      String?
+  linkedin    String?
+  twitter     String?
+  skills      String[]
+  education   Json?    // 學習歷程
+  experience  Json?    // 工作經驗
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
