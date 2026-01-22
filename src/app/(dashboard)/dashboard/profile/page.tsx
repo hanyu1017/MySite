@@ -224,6 +224,32 @@ export default function ProfileEditPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                個人照片 URL
+              </label>
+              <Input
+                value={profile.avatar || ''}
+                onChange={(e) => setProfile({ ...profile, avatar: e.target.value })}
+                placeholder="https://example.com/your-photo.jpg"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                請提供圖片的公開連結 URL（建議使用 Imgur、Cloudinary 等圖床服務）
+              </p>
+              {profile.avatar && (
+                <div className="mt-3">
+                  <p className="text-sm text-gray-600 mb-2">照片預覽：</p>
+                  <img
+                    src={profile.avatar}
+                    alt="照片預覽"
+                    className="w-32 h-32 rounded-lg object-cover border-2 border-gray-200"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 個人簡介
               </label>
               <textarea
