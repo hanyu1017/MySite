@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
-import { Menu, X, LogOut, BarChart } from 'lucide-react'
+import { Menu, X, LogOut, BarChart, User } from 'lucide-react'
 import { useState } from 'react'
 
 export function Header() {
@@ -33,6 +33,13 @@ export function Header() {
 
             {isAdmin && (
               <>
+                <Link
+                  href="/dashboard/profile"
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
+                >
+                  <User size={18} />
+                  編輯資料
+                </Link>
                 <Link
                   href="/dashboard/analytics"
                   className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
@@ -96,6 +103,13 @@ export function Header() {
 
             {isAdmin && (
               <>
+                <Link
+                  href="/dashboard/profile"
+                  className="block text-gray-600 hover:text-gray-900 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  編輯資料
+                </Link>
                 <Link
                   href="/dashboard/analytics"
                   className="block text-gray-600 hover:text-gray-900 transition"
