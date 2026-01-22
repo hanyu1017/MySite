@@ -41,10 +41,10 @@ export default function Home() {
         <div className="container mx-auto px-4 py-20 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* 左側 - 照片區 */}
-            <AnimatedSection delay={0} className="lg:col-span-5">
+            <AnimatedSection delay={0} className="lg:col-span-4">
               <div className="relative group">
                 {/* 照片容器 */}
-                <div className="relative w-full max-w-md mx-auto">
+                <div className="relative w-full max-w-sm mx-auto">
                   {/* 裝飾性邊框 */}
                   <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl opacity-75 blur-xl group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
 
@@ -60,13 +60,13 @@ export default function Home() {
                       />
                     ) : (
                       <div className="w-full aspect-square bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center">
-                        <div className="text-center p-8">
-                          <div className="w-32 h-32 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-5xl font-bold">
+                        <div className="text-center p-6">
+                          <div className="w-24 h-24 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-4xl font-bold">
                               {profile?.name?.charAt(0) || '?'}
                             </span>
                           </div>
-                          <p className="text-gray-600">登入後可在「編輯資料」上傳照片</p>
+                          <p className="text-gray-600 text-sm">登入後可在「編輯資料」上傳照片</p>
                         </div>
                       </div>
                     )}
@@ -115,7 +115,7 @@ export default function Home() {
             </AnimatedSection>
 
             {/* 右側 - 基本資料 */}
-            <AnimatedSection delay={200} className="lg:col-span-7">
+            <AnimatedSection delay={200} className="lg:col-span-8">
               <div className="space-y-6">
                 {/* 名字和職稱 */}
                 <div>
