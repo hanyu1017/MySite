@@ -9,6 +9,7 @@ const linkSchema = z.object({
   url: z.string().url('請輸入有效的網址'),
   title: z.string().min(1, '標題為必填'),
   description: z.string().optional(),
+  notes: z.string().optional(),
   enabled: z.boolean().default(true),
 })
 

@@ -14,6 +14,7 @@ interface TrackedLink {
   url: string
   title: string
   description: string | null
+  notes: string | null
   clicks: number
   enabled: boolean
   createdAt: Date
@@ -195,7 +196,13 @@ export default function LinksManagementPage() {
                     )}
                   </div>
                   {link.description && (
-                    <p className="text-gray-600 mb-3">{link.description}</p>
+                    <p className="text-gray-600 mb-2">{link.description}</p>
+                  )}
+                  {link.notes && (
+                    <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                      <p className="text-xs text-yellow-800 font-semibold mb-1">備註</p>
+                      <p className="text-sm text-yellow-900">{link.notes}</p>
+                    </div>
                   )}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
@@ -280,6 +287,7 @@ function LinkForm({
     url: link?.url || '',
     title: link?.title || '',
     description: link?.description || '',
+    notes: link?.notes || '',
     enabled: link?.enabled ?? true,
   })
   const [saving, setSaving] = useState(false)
@@ -292,6 +300,7 @@ function LinkForm({
       const data = {
         ...formData,
         description: formData.description || null,
+        notes: formData.notes || null,
       }
 
       const url = link ? `/api/links/${link.id}` : '/api/links'
@@ -374,6 +383,19 @@ function LinkForm({
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="關於此連結的描述..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            備註 <span className="text-xs text-gray-500">(例如：給了誰、使用場景等)</span>
+          </label>
+          <textarea
+            className="w-full px-3 py-2 border border-yellow-200 bg-yellow-50 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            rows={2}
+            value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            placeholder="例如：給張三、用於 Facebook 廣告活動..."
           />
         </div>
 

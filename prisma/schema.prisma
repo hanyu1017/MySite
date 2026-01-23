@@ -112,6 +112,7 @@ model TrackedLink {
   url         String              // 目標網址
   title       String              // 連結標題
   description String?             // 連結描述
+  notes       String?  @db.Text   // 備註（例如：給了誰、使用場景等）
   clicks      Int      @default(0) // 點擊次數
   enabled     Boolean  @default(true) // 是否啟用
   createdAt   DateTime @default(now())
