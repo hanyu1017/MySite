@@ -38,8 +38,8 @@ export default function Home() {
           <div className="absolute w-96 h-96 bg-pink-400/20 rounded-full blur-3xl top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-blob animation-delay-4000"></div>
         </div>
 
-        <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="container mx-auto px-4 py-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             {/* 左側 - 照片區 */}
             <AnimatedSection delay={0} className="lg:col-span-4">
               <div className="relative group">
@@ -248,7 +248,7 @@ export default function Home() {
 
       {/* About Section - 詳細資料 */}
       <section id="about" className="waterfall-section bg-white">
-        <div className="container mx-auto px-4 py-20">
+        <div className="container mx-auto px-4 py-12">
           <AnimatedSection>
             <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
@@ -256,7 +256,7 @@ export default function Home() {
               </span>
             </h2>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
               {/* 技能 */}
               {profile?.skills && profile.skills.length > 0 && (
                 <AnimatedSection delay={100}>
@@ -348,7 +348,7 @@ export default function Home() {
 
       {/* Projects Section */}
       <section id="projects" className="waterfall-section bg-gradient-to-br from-gray-50 to-blue-50">
-        <div className="container mx-auto px-4 py-20">
+        <div className="container mx-auto px-4 py-12">
           <AnimatedSection>
             <h2 className="text-4xl font-bold text-center text-gray-900 mb-4">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
@@ -365,7 +365,7 @@ export default function Home() {
 
       {/* Contact Section */}
       <section id="contact" className="waterfall-section bg-white">
-        <div className="container mx-auto px-4 py-20">
+        <div className="container mx-auto px-4 py-12">
           <AnimatedSection>
             <h2 className="text-4xl font-bold text-center text-gray-900 mb-4">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">

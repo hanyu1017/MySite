@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
-import { Menu, X, LogOut, BarChart, User } from 'lucide-react'
+import { Menu, X, LogOut, BarChart, User, FolderKanban, Link as LinkIcon } from 'lucide-react'
 import { useState } from 'react'
 
 export function Header() {
@@ -39,6 +39,20 @@ export function Header() {
                 >
                   <User size={18} />
                   編輯資料
+                </Link>
+                <Link
+                  href="/dashboard/projects"
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
+                >
+                  <FolderKanban size={18} />
+                  專案管理
+                </Link>
+                <Link
+                  href="/dashboard/links"
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
+                >
+                  <LinkIcon size={18} />
+                  連結追蹤
                 </Link>
                 <Link
                   href="/dashboard/analytics"
@@ -109,6 +123,20 @@ export function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   編輯資料
+                </Link>
+                <Link
+                  href="/dashboard/projects"
+                  className="block text-gray-600 hover:text-gray-900 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  專案管理
+                </Link>
+                <Link
+                  href="/dashboard/links"
+                  className="block text-gray-600 hover:text-gray-900 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  連結追蹤
                 </Link>
                 <Link
                   href="/dashboard/analytics"
