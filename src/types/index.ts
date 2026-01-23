@@ -44,3 +44,26 @@ export interface Analytics {
   topEvents: { event: string; count: number }[]
   eventsByDay: any[]
 }
+
+export interface TrackedLink {
+  id: string
+  slug: string
+  url: string
+  title: string
+  description: string | null
+  clicks: number
+  enabled: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface LinkClick {
+  id: string
+  linkId: string
+  ipAddress: string | null
+  userAgent: string | null
+  referer: string | null
+  country: string | null
+  city: string | null
+  createdAt: Date
+}

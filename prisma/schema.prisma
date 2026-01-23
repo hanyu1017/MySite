@@ -104,3 +104,39 @@ model Profile {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// 追蹤連結模型 - 用於追蹤網址點擊
+model TrackedLink {
+  id          String   @id @default(cuid())
+  slug        String   @unique  // 短網址標識符
+  url         String              // 目標網址
+  title       String              // 連結標題
+  description String?             // 連結描述
+  clicks      Int      @default(0) // 點擊次數
+  enabled     Boolean  @default(true) // 是否啟用
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 點擊記錄
+  clickEvents LinkClick[]
+
+  @@index([slug])
+  @@index([enabled])
+}
+
+// 連結點擊記錄
+model LinkClick {
+  id          String   @id @default(cuid())
+  linkId      String
+  ipAddress   String?
+  userAgent   String?
+  referer     String?
+  country     String?
+  city        String?
+  createdAt   DateTime @default(now())
+
+  link        TrackedLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId])
+  @@index([createdAt])
+}

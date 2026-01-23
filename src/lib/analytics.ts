@@ -29,73 +29,89 @@ export async function trackEvent(data: AnalyticsEvent) {
 }
 
 export async function getAnalytics(startDate?: Date, endDate?: Date) {
-  const where = {
-    createdAt: {
-      ...(startDate && { gte: startDate }),
-      ...(endDate && { lte: endDate }),
-    },
-  }
+  try {
+    const defaultStartDate = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const defaultEndDate = endDate || new Date()
 
-  const [
-    totalEvents,
-    pageViews,
-    uniqueVisitors,
-    topPages,
-    topEvents,
-    eventsByDay,
-  ] = await Promise.all([
-    // 總事件數
-    prisma.analytics.count({ where }),
+    const where = {
+      createdAt: {
+        gte: defaultStartDate,
+        lte: defaultEndDate,
+      },
+    }
 
-    // 頁面瀏覽數
-    prisma.analytics.count({
-      where: { ...where, event: 'page_view' },
-    }),
+    const [
+      totalEvents,
+      pageViews,
+      uniqueVisitors,
+      topPages,
+      topEvents,
+      eventsByDay,
+    ] = await Promise.all([
+      // 總事件數
+      prisma.analytics.count({ where }),
 
-    // 唯一訪客數（基於 IP）
-    prisma.analytics.groupBy({
-      by: ['ipAddress'],
-      where,
-      _count: true,
-    }),
+      // 頁面瀏覽數
+      prisma.analytics.count({
+        where: { ...where, event: 'page_view' },
+      }),
 
-    // 熱門頁面
-    prisma.analytics.groupBy({
-      by: ['page'],
-      where: { ...where, event: 'page_view' },
-      _count: true,
-      orderBy: { _count: { page: 'desc' } },
-      take: 10,
-    }),
+      // 唯一訪客數（基於 IP）
+      prisma.analytics.groupBy({
+        by: ['ipAddress'],
+        where,
+        _count: true,
+      }).then(results => results.filter(r => r.ipAddress !== null)),
 
-    // 熱門事件
-    prisma.analytics.groupBy({
-      by: ['event'],
-      where,
-      _count: true,
-      orderBy: { _count: { event: 'desc' } },
-      take: 10,
-    }),
+      // 熱門頁面
+      prisma.analytics.groupBy({
+        by: ['page'],
+        where: { ...where, event: 'page_view', page: { not: null } },
+        _count: { page: true },
+        orderBy: { _count: { page: 'desc' } },
+        take: 10,
+      }),
 
-    // 每日事件
-    prisma.$queryRaw`
-      SELECT
-        DATE(created_at) as date,
-        COUNT(*) as count
-      FROM "Analytics"
-      WHERE created_at >= ${startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
-        AND created_at <= ${endDate || new Date()}
-      GROUP BY DATE(created_at)
-      ORDER BY date DESC
-    `,
-  ])
+      // 熱門事件
+      prisma.analytics.groupBy({
+        by: ['event'],
+        where,
+        _count: { event: true },
+        orderBy: { _count: { event: 'desc' } },
+        take: 10,
+      }),
 
-  return {
-    totalEvents,
-    pageViews,
-    uniqueVisitors: uniqueVisitors.length,
-    topPages: topPages.map((p) => ({ page: p.page, count: p._count })),
-    topEvents: topEvents.map((e) => ({ event: e.event, count: e._count })),
-    eventsByDay,
+      // 每日事件
+      prisma.$queryRaw`
+        SELECT
+          DATE("createdAt") as date,
+          COUNT(*)::int as count
+        FROM "Analytics"
+        WHERE "createdAt" >= ${defaultStartDate}
+          AND "createdAt" <= ${defaultEndDate}
+        GROUP BY DATE("createdAt")
+        ORDER BY date DESC
+      `,
+    ])
+
+    return {
+      totalEvents,
+      pageViews,
+      uniqueVisitors: uniqueVisitors.length,
+      topPages: topPages.map((p) => ({ page: p.page || '/', count: p._count.page })),
+      topEvents: topEvents.map((e) => ({ event: e.event, count: e._count.event })),
+      eventsByDay,
+    }
+  } catch (error) {
+    console.error('Analytics query error:', error)
+    // 返回空數據而不是拋出錯誤
+    return {
+      totalEvents: 0,
+      pageViews: 0,
+      uniqueVisitors: 0,
+      topPages: [],
+      topEvents: [],
+      eventsByDay: [],
+    }
   }
 }
