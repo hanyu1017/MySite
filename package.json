@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-links": "tsx prisma/seed-links.ts",
-    "seed": "npm run db:seed && npm run db:seed-links"
+    "db:seed-homepage": "tsx prisma/seed-homepage-links.ts",
+    "seed": "npm run db:seed && npm run db:seed-links && npm run db:seed-homepage"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
