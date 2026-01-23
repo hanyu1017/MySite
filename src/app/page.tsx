@@ -39,7 +39,7 @@ export default function Home() {
         </div>
 
         <div className="container mx-auto px-4 py-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* 左側 - 照片區 */}
             <AnimatedSection delay={0} className="lg:col-span-4">
               <div className="relative group">
