@@ -11,9 +11,8 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:seed-links": "tsx prisma/seed-links.ts",
     "db:seed-homepage": "tsx prisma/seed-homepage-links.ts",
-    "seed": "npm run db:seed && npm run db:seed-links && npm run db:seed-homepage"
+    "seed": "npm run db:seed && npm run db:seed-homepage"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
