@@ -92,20 +92,21 @@ model Analytics {
 
 // 個人資料模型
 model Profile {
-  id          String   @id @default(cuid())
-  name        String
-  title       String
-  bio         String   @db.Text
-  avatar      String?
-  email       String?
-  github      String?
-  linkedin    String?
-  twitter     String?
-  skills      String[]
-  education   Json?    // 學習歷程
-  experience  Json?    // 工作經驗
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  title          String
+  bio            String   @db.Text
+  avatar         String?
+  email          String?
+  github         String?
+  linkedin       String?
+  twitter        String?
+  skills         String[]
+  education      Json?    // 學習歷程
+  experience     Json?    // 工作經驗
+  certifications Json?    // 專業證照
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 // 追蹤連結模型 - 用於追蹤網址點擊

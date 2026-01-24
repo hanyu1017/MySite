@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { ProjectGrid } from '@/components/projects/ProjectGrid'
 import { Card } from '@/components/ui/Card'
 import { useInView } from 'react-intersection-observer'
-import { Github, Linkedin, Mail, Code, Briefcase, GraduationCap, Calendar } from 'lucide-react'
+import { Github, Linkedin, Mail, Code, Briefcase, GraduationCap, Calendar, Award } from 'lucide-react'
 import type { Profile } from '@/types'
 import Image from 'next/image'
 
@@ -238,7 +238,7 @@ export default function Home() {
               </span>
             </h2>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
               {/* 技能 */}
               {profile?.skills && profile.skills.length > 0 && (
                 <AnimatedSection delay={100}>
@@ -287,6 +287,33 @@ export default function Home() {
                           {edu.description && (
                             <p className="text-sm text-gray-600 mt-2">{edu.description}</p>
                           )}
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </AnimatedSection>
+              )}
+
+              {/* 專業證照 */}
+              {profile?.certifications && (profile.certifications as any[]).length > 0 && (
+                <AnimatedSection delay={250}>
+                  <Card className="h-full">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg">
+                        <Award size={28} className="text-white" />
+                      </div>
+                      <h3 className="text-2xl font-semibold text-gray-800">專業證照</h3>
+                    </div>
+                    <div className="space-y-6">
+                      {(profile.certifications as any[]).map((cert: any, index: number) => (
+                        <div key={index} className="relative pl-6 border-l-4 border-yellow-500 hover:border-yellow-600 transition-colors">
+                          <div className="absolute w-3 h-3 bg-yellow-500 rounded-full -left-[8px] top-1"></div>
+                          <h4 className="font-semibold text-gray-800 text-lg">{cert.name}</h4>
+                          <p className="text-gray-600">{cert.score}</p>
+                          <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                            <Calendar size={14} />
+                            {cert.date}
+                          </p>
                         </div>
                       ))}
                     </div>

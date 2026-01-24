@@ -22,6 +22,12 @@ interface Experience {
   description?: string
 }
 
+interface Certification {
+  name: string
+  score: string
+  date: string
+}
+
 interface ProfileData {
   name: string
   title: string
@@ -34,6 +40,7 @@ interface ProfileData {
   skills: string[]
   education: Education[]
   experience: Experience[]
+  certifications: Certification[]
 }
 
 export default function ProfileEditPage() {
@@ -52,6 +59,7 @@ export default function ProfileEditPage() {
     skills: [],
     education: [],
     experience: [],
+    certifications: [],
   })
   const [newSkill, setNewSkill] = useState('')
 
@@ -88,6 +96,7 @@ export default function ProfileEditPage() {
           skills: data.skills || [],
           education: data.education || [],
           experience: data.experience || [],
+          certifications: data.certifications || [],
         })
       }
     } catch (error) {
@@ -179,6 +188,29 @@ export default function ProfileEditPage() {
     })
   }
 
+  const addCertification = () => {
+    setProfile({
+      ...profile,
+      certifications: [
+        ...profile.certifications,
+        { name: '', score: '', date: '' },
+      ],
+    })
+  }
+
+  const updateCertification = (index: number, field: keyof Certification, value: string) => {
+    const updated = [...profile.certifications]
+    updated[index] = { ...updated[index], [field]: value }
+    setProfile({ ...profile, certifications: updated })
+  }
+
+  const removeCertification = (index: number) => {
+    setProfile({
+      ...profile,
+      certifications: profile.certifications.filter((_, i) => i !== index),
+    })
+  }
+
   if (loading || status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center pt-16">
@@ -203,7 +235,7 @@ export default function ProfileEditPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">基本資訊</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
                 姓名
               </label>
               <Input
@@ -213,7 +245,7 @@ export default function ProfileEditPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
                 職稱
               </label>
               <Input
@@ -223,7 +255,7 @@ export default function ProfileEditPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
                 個人照片 URL
               </label>
               <Input
@@ -249,7 +281,7 @@ export default function ProfileEditPage() {
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
                 個人簡介
               </label>
               <textarea
@@ -268,7 +300,7 @@ export default function ProfileEditPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">聯絡資訊</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
                 Email
               </label>
               <Input
@@ -279,7 +311,7 @@ export default function ProfileEditPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
                 GitHub
               </label>
               <Input
@@ -289,7 +321,7 @@ export default function ProfileEditPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
                 LinkedIn
               </label>
               <Input
@@ -425,6 +457,63 @@ export default function ProfileEditPage() {
                     rows={3}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* 專業證照 */}
+        <Card className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-900">專業證照</h2>
+            <Button onClick={addCertification}>
+              <Plus size={18} className="mr-2" />
+              新增證照
+            </Button>
+          </div>
+          <div className="space-y-4">
+            {profile.certifications.map((cert, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex justify-end mb-2">
+                  <button
+                    onClick={() => removeCertification(index)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      證照名稱
+                    </label>
+                    <Input
+                      value={cert.name}
+                      onChange={(e) => updateCertification(index, 'name', e.target.value)}
+                      placeholder="例如：TOEIC 多益測驗"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      分數（通過）
+                    </label>
+                    <Input
+                      value={cert.score}
+                      onChange={(e) => updateCertification(index, 'score', e.target.value)}
+                      placeholder="例如：890 分（通過）"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      取得證書日期
+                    </label>
+                    <Input
+                      value={cert.date}
+                      onChange={(e) => updateCertification(index, 'date', e.target.value)}
+                      placeholder="例如：2024年1月"
+                    />
+                  </div>
                 </div>
               </div>
             ))}
