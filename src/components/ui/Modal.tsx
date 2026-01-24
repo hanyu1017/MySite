@@ -48,16 +48,16 @@ export function Modal({ isOpen, onClose, children, title, maxWidth = '2xl' }: Mo
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className={`relative bg-white rounded-2xl shadow-2xl w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] overflow-hidden animate-modal-in`}
+        className={`relative bg-white rounded-2xl shadow-2xl w-full ${maxWidthClasses[maxWidth]} my-8 animate-modal-in`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 標題列 */}
         {title && (
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10 rounded-t-2xl">
             <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
             <button
               onClick={onClose}
@@ -81,7 +81,7 @@ export function Modal({ isOpen, onClose, children, title, maxWidth = '2xl' }: Mo
         )}
 
         {/* 內容 */}
-        <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
+        <div className="overflow-y-auto max-h-[80vh] p-6">
           {children}
         </div>
       </div>
