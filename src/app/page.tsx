@@ -110,7 +110,7 @@ export default function Home() {
                   <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
                     {profile?.name || '您的名字'}
                   </h1>
-                  <p className="text-2xl md:text-3xl text-gray-700 mb-6">
+                  <p className="text-xl md:text-2xl text-gray-700 mb-6">
                     {profile?.title || '您的職稱'}
                   </p>
                 </div>

@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import { ProjectCard } from './ProjectCard'
+import { ProjectDetailModal } from './ProjectDetailModal'
 import { useInView } from 'react-intersection-observer'
 import type { Project } from '@/types'
 
 export function ProjectGrid() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     fetchProjects()
@@ -23,6 +26,17 @@ export function ProjectGrid() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleProjectClick = (project: Project) => {
+    setSelectedProject(project)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    // 延遲清除選中的專案，讓關閉動畫完成
+    setTimeout(() => setSelectedProject(null), 300)
   }
 
   if (loading) {
@@ -42,15 +56,37 @@ export function ProjectGrid() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {projects.map((project, index) => (
-        <AnimatedProjectCard key={project.id} project={project} delay={index * 100} />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {projects.map((project, index) => (
+          <AnimatedProjectCard
+            key={project.id}
+            project={project}
+            delay={index * 100}
+            onClick={() => handleProjectClick(project)}
+          />
+        ))}
+      </div>
+
+      {/* 專案詳情 Modal */}
+      <ProjectDetailModal
+        project={selectedProject}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
+    </>
   )
 }
 
-function AnimatedProjectCard({ project, delay }: { project: Project; delay: number }) {
+function AnimatedProjectCard({
+  project,
+  delay,
+  onClick,
+}: {
+  project: Project
+  delay: number
+  onClick: () => void
+}) {
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -64,7 +100,7 @@ function AnimatedProjectCard({ project, delay }: { project: Project; delay: numb
       }`}
       style={{ transitionDelay: `${delay}ms` }}
     >
-      <ProjectCard project={project} />
+      <ProjectCard project={project} onClick={onClick} />
     </div>
   )
 }
