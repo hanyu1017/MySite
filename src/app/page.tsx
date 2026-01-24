@@ -50,26 +50,14 @@ export default function Home() {
 
                   {/* 照片 */}
                   <div className="relative bg-white rounded-2xl p-2 shadow-2xl">
-                    {profile?.avatar ? (
-                      <Image
-                        src={profile.avatar}
-                        alt={profile.name || '個人照片'}
-                        width={400}
-                        height={400}
-                        className="w-full h-auto rounded-xl object-cover"
-                      />
-                    ) : (
-                      <div className="w-full aspect-square bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center">
-                        <div className="text-center p-6">
-                          <div className="w-24 h-24 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-4xl font-bold">
-                              {profile?.name?.charAt(0) || '?'}
-                            </span>
-                          </div>
-                          <p className="text-gray-600 text-sm">登入後可在「編輯資料」上傳照片</p>
-                        </div>
-                      </div>
-                    )}
+                    <Image
+                      src={profile?.avatar || '/images/profile/default-avatar.svg'}
+                      alt={profile?.name || '個人照片'}
+                      width={400}
+                      height={400}
+                      className="w-full h-auto rounded-xl object-cover"
+                      priority
+                    />
                   </div>
 
                   {/* 浮動裝飾元素 */}

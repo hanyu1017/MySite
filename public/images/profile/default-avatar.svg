@@ -1,0 +1,16 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景漸層 -->
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="400" height="400" fill="url(#bg-gradient)" rx="20"/>
+
+  <!-- 人物圖示 -->
+  <circle cx="200" cy="150" r="60" fill="white" opacity="0.9"/>
+  <path d="M 120 320 Q 120 240 200 240 Q 280 240 280 320 L 280 400 L 120 400 Z" fill="white" opacity="0.9"/>
+</svg>
