@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>訂閱制存貨管理系統</title>
+    
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    
+    <py-config>
+        packages = ["numpy", "scipy"]
+    </py-config>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --bg-light: #f4f6f8;
+            --panel-width: 280px;
+            --values-width: 320px;
+            --header-height: 45px;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg-light); font-size: 12px; color: #333; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        
+        /* Fullscreen */
+        body.fullscreen-mode .header, body.fullscreen-mode .sidebar, body.fullscreen-mode .values-panel { display: none !important; }
+        body.fullscreen-mode .main-wrapper { padding: 0; }
+        #exitFullscreenBtn { display: none; position: fixed; top: 15px; right: 15px; z-index: 9999; padding: 8px 16px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 4px; cursor: pointer; backdrop-filter: blur(5px); }
+        
+        /* Header */
+        .header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; height: var(--header-height); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 100; flex-shrink: 0; }
+        .header-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        
+        /* Layout */
+        .main-wrapper { display: flex; flex: 1; overflow: hidden; position: relative; }
+        .sidebar { width: var(--panel-width); background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 90; transition: margin-left 0.3s; flex-shrink: 0; }
+        .sidebar.collapsed { margin-left: calc(var(--panel-width) * -1); }
+        .sidebar-header { padding: 12px 15px; background: #fafafa; border-bottom: 1px solid #eee; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 15px; }
+        
+        .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        
+        /* Dashboard Grid */
+        .dashboard-container { flex: 1; overflow-y: auto; padding: 15px; }
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 15px; 
+            grid-auto-rows: min-content; 
+        }
+        
+        /* Card Styles */
+        .card { 
+            background: white; 
+            border-radius: 6px; 
+            padding: 15px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            border-top: 3px solid transparent;
+            height: 260px; /* Reduced Height */
+        }
+        .card.auto-height { height: auto; min-height: 260px; }
+        .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .card-header { font-size: 13px; font-weight: 700; color: #444; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; }
+        .card-body { flex: 1; position: relative; width: 100%; min-height: 0; }
+        
+        .col-1 { grid-column: span 1; }
+        .col-2 { grid-column: span 2; }
+        .col-3 { grid-column: span 3; }
+        
+        /* Section Titles */
+        .section-title { 
+            grid-column: 1 / -1; 
+            font-size: 14px; 
+            font-weight: 700; 
+            color: #2c3e50; 
+            margin-top: 15px; 
+            margin-bottom: 5px; 
+            padding-left: 10px; 
+            border-left: 4px solid var(--accent); 
+            background: #fff;
+            padding: 8px 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .section-title:first-child { margin-top: 0; }
+
+        /* KPI Cards */
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; flex-shrink: 0; }
+        .kpi-card { background: white; padding: 12px; border-radius: 6px; border: 1px solid #eee; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .kpi-val { font-size: 20px; font-weight: 600; color: #2c3e50; }
+        .kpi-label { font-size: 11px; color: #888; text-transform: uppercase; margin-top: 4px; }
+
+        /* Inputs */
+        .input-group { margin-bottom: 8px; }
+        .input-label { display: block; font-size: 11px; color: #666; margin-bottom: 2px; }
+        .input-field { width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; }
+        .btn { width: 100%; padding: 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; margin-bottom: 5px; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-secondary { background: white; border: 1px solid #ddd; color: #666; }
+
+        /* Values Panel */
+        .values-panel { width: var(--values-width); background: white; border-left: 1px solid #ddd; display: flex; flex-direction: column; z-index: 80; transition: margin-right 0.3s; flex-shrink: 0; }
+        .values-panel.collapsed { margin-right: calc(var(--values-width) * -1); }
+        .panel-header { padding: 12px 15px; background: #fafafa; border-bottom: 1px solid #eee; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .values-list { padding: 15px; overflow-y: auto; flex: 1; }
+        
+        /* Table */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .data-table th { text-align: left; background: #f8f9fa; padding: 6px; position: sticky; top: 0; z-index: 2; border-bottom: 1px solid #ddd; }
+        .data-table td { padding: 6px; border-bottom: 1px solid #eee; }
+        
+        /* Python Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-content { background: #1e1e1e; width: 85%; height: 85%; border-radius: 8px; display: flex; flex-direction: column; }
+        .modal-header { padding: 10px 20px; background: #252526; color: #ccc; display: flex; justify-content: space-between; align-items: center; }
+        .code-view { flex: 1; padding: 15px; overflow: auto; color: #d4d4d4; font-family: 'Consolas', monospace; margin: 0; font-size: 12px; }
+
+        /* Loading Overlay */
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .collapse-btn { position: absolute; top: 50%; width: 20px; height: 40px; background: white; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 95; }
+        #leftCollapse { left: 0; border-left: none; }
+        #rightCollapse { right: 0; border-right: none; }
+        
+        .value-row { display: flex; justify-content: space-between; margin-bottom: 6px; padding: 4px 0; border-bottom: 1px dashed #eee; font-size: 12px; }
+        .value-group-title { color: #3498db; font-weight: 700; margin-top: 10px; margin-bottom: 5px; font-size: 12px; text-transform: uppercase; border-left: 3px solid #3498db; padding-left: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="loading-overlay" id="loadingScreen">
+        <div class="loader"></div>
+        <div style="margin-top: 10px; font-weight: 600; color: #2c3e50;" id="loadingText">初始化系統中...</div>
+    </div>
+
+    <button id="exitFullscreenBtn" onclick="toggleFullscreen()">退出全螢幕</button>
+
+    <div class="header">
+        <div class="header-title"><i class="fas fa-cubes"></i> 訂閱制存貨管理系統 - V8 ULTIMATE</div>
+        <div style="font-size:11px; opacity:0.8;">Python Analysis</div>
+    </div>
+
+    <div class="main-wrapper">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span>參數設定</span>
+                <button onclick="toggleSidebar()" style="border:none; bg:none; cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="sidebar-content">
+                
+                <div style="background:#fff3cd; padding:10px; border-radius:4px; margin-bottom:15px; border:1px solid #ffeeba;">
+                    <div style="font-weight:700; color:#856404; margin-bottom:5px;">敏感性分析設定</div>
+                    <div class="input-group">
+                        <label>分析範圍 (±%)</label>
+                        <input type="number" id="sensRange" value="30" class="input-field">
+                    </div>
+                    <div class="input-group">
+                        <label>分析間隔 (%)</label>
+                        <input type="number" id="sensStep" value="5" class="input-field">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="runOptimization()" id="btnRun">開始分析運算</button>
+                <button class="btn btn-secondary" onclick="resetParams()">重置預設值</button>
+                
+                <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+
+                <div id="paramContainer"></div>
+            </div>
+        </div>
+        <div class="collapse-btn" id="leftCollapse" onclick="toggleSidebar()" style="display:none;"><i class="fas fa-chevron-right"></i></div>
+
+        <div class="content">
+            <div style="padding:8px 15px; background:#fff; border-bottom:1px solid #eee; display:flex; justify-content:flex-end; gap:10px;">
+                <button onclick="openPythonModal()" style="border:1px solid #ccc; bg:white; padding:4px 8px; border-radius:3px; cursor:pointer;"><i class="fab fa-python"></i> 程式碼</button>
+                <button onclick="toggleFullscreen()" style="border:1px solid #ccc; bg:white; padding:4px 8px; border-radius:3px; cursor:pointer;"><i class="fas fa-expand"></i> 全螢幕</button>
+                <button onclick="toggleValuesPanel()" style="border:1px solid #ccc; bg:white; padding:4px 8px; border-radius:3px; cursor:pointer;"><i class="fas fa-table"></i> 數據</button>
+            </div>
+
+            <div class="dashboard-container">
+                <div class="kpi-row" id="kpiRow"></div>
+
+                <div class="dashboard-grid">
+                    
+                    <div class="section-title">財務與成本結構 (Financials)</div>
+                    
+                    <div class="card col-1" style="border-top-color: #3498db;">
+                        <div class="card-header">成本結構佔比 (Pie)</div>
+                        <div class="card-body"><canvas id="costPieChart"></canvas></div>
+                    </div>
+                    <div class="card col-1" style="border-top-color: #3498db;">
+                        <div class="card-header">成本分布樹狀圖 (Treemap)</div>
+                        <div class="card-body"><canvas id="costTreeMap"></canvas></div>
+                    </div>
+                    <div class="card col-1" style="border-top-color: #2ecc71;">
+                        <div class="card-header">每月營收成本利潤 (Stacked Bar)</div>
+                        <div class="card-body"><canvas id="monthlyChart"></canvas></div>
+                    </div>
+
+                    <div class="section-title">營運與存貨策略 (Operations)</div>
+
+                    <div class="card col-2" style="border-top-color: #e67e22;">
+                        <div class="card-header">多週期庫存水準模擬 (Inventory Level)</div>
+                        <div class="card-body"><canvas id="inventoryChart"></canvas></div>
+                    </div>
+                    <div class="card col-1" style="border-top-color: #e67e22;">
+                        <div class="card-header">訂購週期分析 (Cycle Analysis)</div>
+                        <div class="card-body"><canvas id="cycleChart"></canvas></div>
+                    </div>
+                    <div class="card col-1" style="border-top-color: #9b59b6;">
+                        <div class="card-header">新鮮度衰退曲線 (Freshness Decay)</div>
+                        <div class="card-body"><canvas id="freshnessChart"></canvas></div>
+                    </div>
+                    <div class="card col-1" style="border-top-color: #9b59b6;">
+                        <div class="card-header">價格彈性分析 (Price Elasticity)</div>
+                        <div class="card-body"><canvas id="priceChart"></canvas></div>
+                    </div>
+                    <div class="card col-1" style="border-top-color: #1abc9c;">
+                        <div class="card-header">CRM 效益分析 (CRM Impact)</div>
+                        <div class="card-body"><canvas id="crmChart"></canvas></div>
+                    </div>
+
+                    <div class="section-title">進階分析：信用交易與碳排 (Advanced)</div>
+
+                    <div class="card col-1" style="border-top-color: #f1c40f;">
+                        <div class="card-header">兩階段信用交易利息 (Credit Interest)</div>
+                        <div class="card-body"><canvas id="creditChart"></canvas></div>
+                    </div>
+                    <div class="card col-1" style="border-top-color: #7f8c8d;">
+                        <div class="card-header">碳價 vs 利潤 (Carbon Sensitivity)</div>
+                        <div class="card-body"><canvas id="carbonChart"></canvas></div>
+                    </div>
+                    <div class="card col-1" style="border-top-color: #e74c3c;">
+                        <div class="card-header">利潤熱圖 (Profit Heatmap)</div>
+                        <div class="card-body" id="heatmapContainer"></div>
+                    </div>
+
+                    <div class="section-title">敏感性分析 (Sensitivity - All Parameters)</div>
+
+                    <div class="card col-2 auto-height" style="border-top-color: #34495e;">
+                        <div class="card-header">全參數敏感度比較 (Parameter Sensitivity Line)</div>
+                        <div class="card-body"><canvas id="sensLineChart"></canvas></div>
+                    </div>
+                    <div class="card col-1 auto-height" style="border-top-color: #34495e;">
+                        <div class="card-header">敏感性分析總表 (Full Data Table)</div>
+                        <div class="card-body" style="overflow-y:auto; max-height: 220px;">
+                            <table class="data-table" id="sensTable">
+                                <thead><tr><th>參數</th><th>變動(%)</th><th>利潤影響(%)</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="values-panel" id="valuesPanel">
+            <div class="panel-header">
+                <span>詳細數據</span>
+                <button onclick="toggleValuesPanel()" style="border:none; bg:none; cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="values-list" id="valuesList">
+                <div style="padding:20px; text-align:center; color:#999;">請執行運算</div>
+            </div>
+        </div>
+        <div class="collapse-btn" id="rightCollapse" onclick="toggleValuesPanel()" style="display:none;"><i class="fas fa-chevron-left"></i></div>
+    </div>
+
+    <div class="modal" id="codeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Python 核心代碼 (Full Source)</span>
+                <button onclick="document.getElementById('codeModal').style.display='none'" style="border:none; background:none; color:white; cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <pre class="code-view"><code class="language-python" id="pythonContent">Loading...</code></pre>
+        </div>
+    </div>
+
+    <script>
+        // CRM params increased for visibility
+        const PARAMS = [
+            { id: 'a1', label: '訂閱基礎需求 (a1)', val: 100, group: 'Demand' },
+            { id: 'b1', label: 'CRM 效果係數 (b1)', val: 1.0, group: 'Demand' }, // Increased
+            { id: 'm', label: 'CRM 指數 (m)', val: 0.5, group: 'Demand' },    // Adjusted
+            { id: 'a2', label: '零售基礎需求 (a2)', val: 800, group: 'Demand' },
+            { id: 'b2', label: '價格敏感度 (b2)', val: 8, group: 'Demand' },
+            { id: 'c', label: '單位成本 (c)', val: 20, group: 'Cost' },
+            { id: 's', label: '訂購成本 (s)', val: 1000, group: 'Cost' },
+            { id: 'h', label: '持有成本 (h)', val: 2, group: 'Cost' },
+            { id: 'Kf', label: '固定運輸 (Kf)', val: 500, group: 'Cost' },
+            { id: 'Kv', label: '變動運輸 (Kv)', val: 1, group: 'Cost' },
+            { id: 'beta', label: '折扣率 (beta)', val: 0.3, group: 'Finance' },
+            { id: 'Es', label: '寬限期 (Es)', val: 20, group: 'Finance' },
+            { id: 'G', label: '免息期 (G)', val: 15, group: 'Finance' },
+            { id: 'Ic', label: '融資利率 (Ic)', val: 0.0003, group: 'Finance' },
+            { id: 'Ie', label: '存款利率 (Ie)', val: 0.0002, group: 'Finance' },
+            { id: 'r', label: '新鮮度壽命 (r)', val: 60, group: 'Ops' },
+            { id: 'theta', label: '衰退率 (theta)', val: 0.02, group: 'Ops' }
+        ];
+
+        let charts = {};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderParams();
+            renderKPIs();
+        });
+
+        function renderParams() {
+            const container = document.getElementById('paramContainer');
+            PARAMS.forEach(p => {
+                container.innerHTML += `
+                    <div class="input-group">
+                        <label class="input-label">${p.label}</label>
+                        <input type="number" id="p_${p.id}" value="${p.val}" step="0.01" class="input-field">
+                    </div>
+                `;
+            });
+        }
+
+        function renderKPIs(res) {
+            const container = document.getElementById('kpiRow');
+            const metrics = res ? [
+                {l:'每日利潤', v:res.max_profit.toFixed(2), u:'元'},
+                {l:'零售價 (p*)', v:res.optimal_p.toFixed(2), u:'元'},
+                {l:'訂購週期 (T*)', v:res.optimal_T.toFixed(2), u:'天'},
+                {l:'CRM 投入 (M*)', v:res.optimal_M.toFixed(2), u:'元/天'},
+                {l:'總訂購量 (Q)', v:res.total_Q.toFixed(0), u:'單位'},
+                {l:'碳排放預估', v:res.total_carbon.toFixed(1), u:'kg'}
+            ] : Array(6).fill({l:'-', v:'-', u:'-'});
+
+            container.innerHTML = metrics.map(m => `
+                <div class="kpi-card">
+                    <div class="kpi-val">${m.v} <span style="font-size:12px; color:#aaa;">${m.u}</span></div>
+                    <div class="kpi-label">${m.l}</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleSidebar() {
+            const s = document.getElementById('sidebar');
+            s.classList.toggle('collapsed');
+            document.getElementById('leftCollapse').style.display = s.classList.contains('collapsed') ? 'flex' : 'none';
+        }
+
+        function toggleValuesPanel() {
+            const p = document.getElementById('valuesPanel');
+            p.classList.toggle('collapsed');
+            document.getElementById('rightCollapse').style.display = p.classList.contains('collapsed') ? 'flex' : 'none';
+        }
+
+        function toggleFullscreen() {
+            document.body.classList.toggle('fullscreen-mode');
+            const btn = document.getElementById('exitFullscreenBtn');
+            btn.style.display = document.body.classList.contains('fullscreen-mode') ? 'block' : 'none';
+            setTimeout(() => { Object.values(charts).forEach(c => c.resize()); if(window.Plotly) Plotly.Plots.resize('heatmapContainer'); }, 300);
+        }
+
+        function openPythonModal() { document.getElementById('codeModal').style.display = 'flex'; }
+        
+        async function runOptimization() {
+            const params = {};
+            PARAMS.forEach(p => params[p.id] = document.getElementById(`p_${p.id}`).value);
+            
+            const sensConfig = {
+                range: document.getElementById('sensRange').value,
+                step: document.getElementById('sensStep').value
+            };
+
+            document.getElementById('loadingScreen').style.display = 'flex';
+            document.getElementById('loadingText').innerText = '正在進行複雜運算 (含全參數敏感度分析)...';
+            document.getElementById('btnRun').disabled = true;
+            
+            setTimeout(() => {
+                if(window.py_run) window.py_run(params, sensConfig);
+            }, 100);
+        }
+
+        window.pythonReady = function() {
+            document.getElementById('loadingScreen').style.display = 'none';
+            if(window.py_get_code) {
+                document.getElementById('pythonContent').textContent = window.py_get_code();
+                Prism.highlightElement(document.getElementById('pythonContent'));
+            }
+        };
+
+        window.updateDashboard = function(res) {
+            document.getElementById('loadingScreen').style.display = 'none';
+            document.getElementById('btnRun').disabled = false;
+            
+            renderKPIs(res);
+            updateValues(res);
+            renderCharts(res);
+        };
+
+        function updateValues(res) {
+            const list = document.getElementById('valuesList');
+            const row = (k, v) => `<div class="value-row"><span>${k}</span><span style="font-weight:600">${v}</span></div>`;
+            
+            let html = '<h4 style="margin:10px 0; color:#2980b9;">核心結果</h4>';
+            html += row('Profit', res.max_profit.toFixed(2));
+            html += row('Revenue', res.daily_revenue.toFixed(2));
+            html += row('Cost', res.daily_cost.toFixed(2));
+            html += row('Sub Demand', res.sub_demand.toFixed(2));
+            html += row('Total Qty', res.total_Q.toFixed(0));
+            
+            html += '<h4 style="margin:15px 0 10px 0; color:#2980b9;">成本細項</h4>';
+            res.cost_breakdown.forEach(c => html += row(c.label, c.value.toFixed(2)));
+            
+            html += '<h4 style="margin:15px 0 10px 0; color:#2980b9;">運營指標</h4>';
+            html += row('Avg Inventory', (res.total_Q/2).toFixed(1));
+            html += row('Total Carbon', res.total_carbon.toFixed(1));
+            
+            list.innerHTML = html;
+        }
+
+        function renderCharts(res) {
+            const common = { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { boxWidth: 10, font: {size: 10} } } }
+            };
+            const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#34495e'];
+
+            // 1. Cost Pie
+            drawChart('costPieChart', {
+                type: 'doughnut',
+                data: {
+                    labels: res.cost_breakdown.map(c => c.label),
+                    datasets: [{ data: res.cost_breakdown.map(c => c.value), backgroundColor: colors }]
+                }, options: { ...common, plugins: { legend: { position: 'right' } } }
+            });
+
+            // 2. Treemap
+            drawChart('costTreeMap', {
+                type: 'treemap',
+                data: {
+                    datasets: [{
+                        tree: res.cost_breakdown, key: 'value', groups: ['label'],
+                        backgroundColor: (ctx) => colors[ctx.dataIndex % colors.length],
+                        labels: { display: true, color: 'white', font: {size: 10} }
+                    }]
+                }, options: { ...common, plugins: { legend: { display: false } } }
+            });
+
+            // 3. Monthly
+            drawChart('monthlyChart', {
+                type: 'bar',
+                data: {
+                    labels: res.monthly_data.map(d => d.month),
+                    datasets: [
+                        { label: 'Revenue', data: res.monthly_data.map(d => d.rev), backgroundColor: '#2ecc71', stack: 'Stack 0' },
+                        { label: 'Cost', data: res.monthly_data.map(d => d.cost), backgroundColor: '#e74c3c', stack: 'Stack 1' },
+                        { label: 'Profit', data: res.monthly_data.map(d => d.prof), type: 'line', borderColor: '#2980b9', borderWidth: 2 }
+                    ]
+                }, options: common
+            });
+
+            // 4. Inventory
+            drawChart('inventoryChart', {
+                type: 'line',
+                data: {
+                    labels: res.inv_data.t,
+                    datasets: [{ label: 'Stock Level', data: res.inv_data.q, borderColor: '#e67e22', borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: 'rgba(230,126,34,0.1)' }]
+                }, options: { ...common, scales: { x: { title: { display: true, text: 'Time (Days)' } }, y: { beginAtZero: true, title: { display: true, text: 'Units' } } } }
+            });
+
+            // 5. Cycle
+            drawChart('cycleChart', {
+                type: 'line',
+                data: {
+                    labels: res.cycle_data.t,
+                    datasets: [
+                        { label: 'Holding Cost', data: res.cycle_data.h_cost, borderColor: '#e74c3c', yAxisID: 'y' },
+                        { label: 'Interest', data: res.cycle_data.interest, borderColor: '#f1c40f', yAxisID: 'y' }
+                    ]
+                }, options: { ...common, scales: { x: {title: {display:true, text:'Cycle T'}}, y: {title: {display:true, text:'Cost ($)'}} } }
+            });
+
+            // 6. Freshness
+            drawChart('freshnessChart', {
+                type: 'line',
+                data: {
+                    labels: res.fresh_data.t,
+                    datasets: [{ label: 'Freshness %', data: res.fresh_data.val, borderColor: '#27ae60', fill: true, backgroundColor: 'rgba(39,174,96,0.1)' }]
+                }, options: { ...common, scales: { y: { min: 0, max: 1, title: {display:true, text:'Quality'} }, x: {title: {display:true, text:'Days'}} } }
+            });
+
+            // 7. Price
+            drawChart('priceChart', {
+                type: 'line',
+                data: {
+                    labels: res.price_data.p,
+                    datasets: [
+                        { label: 'Profit', data: res.price_data.prof, borderColor: '#8e44ad', yAxisID: 'y' },
+                        { label: 'Demand', data: res.price_data.dem, borderColor: '#3498db', yAxisID: 'y1', borderDash: [5,5] }
+                    ]
+                }, options: { ...common, scales: { x: {title:{display:true, text:'Price'}}, y: {title:{display:true, text:'Profit'}}, y1: {position:'right', title:{display:true, text:'Demand'}} } }
+            });
+
+            // 8. CRM
+            drawChart('crmChart', {
+                type: 'line',
+                data: {
+                    labels: res.crm_data.m,
+                    datasets: [
+                        { label: 'Profit', data: res.crm_data.prof, borderColor: '#16a085', yAxisID: 'y' },
+                        { label: 'Sub Demand', data: res.crm_data.dem, borderColor: '#f39c12', yAxisID: 'y1' }
+                    ]
+                }, options: { ...common, scales: { x: {title:{display:true, text:'CRM ($)'}}, y: {title:{display:true, text:'Profit'}}, y1: {position:'right', title:{display:true, text:'Demand'}} } }
+            });
+
+            // 9. Credit Term
+            drawChart('creditChart', {
+                type: 'line',
+                data: {
+                    labels: res.credit_data.t,
+                    datasets: [
+                        { label: 'Net Interest', data: res.credit_data.net, borderColor: '#2980b9', borderWidth: 2 },
+                        { label: 'Earned', data: res.credit_data.earn, borderColor: '#2ecc71', borderDash: [2,2] },
+                        { label: 'Paid', data: res.credit_data.paid, borderColor: '#e74c3c', borderDash: [2,2] }
+                    ]
+                }, options: { ...common, scales: { x: {title:{display:true, text:'Cycle Length (T)'}}, y: {title:{display:true, text:'Interest ($)'}} } }
+            });
+
+            // 10. Carbon
+            drawChart('carbonChart', {
+                type: 'line',
+                data: {
+                    labels: res.carbon_data.tax,
+                    datasets: [{ label: 'Profit Impact', data: res.carbon_data.prof, borderColor: '#7f8c8d', fill: true, backgroundColor: 'rgba(127,140,141,0.1)' }]
+                }, options: { ...common, scales: { x: {title:{display:true, text:'Carbon Tax ($/kg)'}}, y: {title:{display:true, text:'Profit'}} } }
+            });
+
+            // 11. Heatmap
+            const heat = { z: res.heatmap_data.z, x: res.heatmap_data.x, y: res.heatmap_data.y, type: 'heatmap', colorscale: 'Viridis' };
+            Plotly.newPlot('heatmapContainer', [heat], { margin: { t: 10, l: 40, r: 10, b: 30 }, height: 250, xaxis: {title:'M'}, yaxis: {title:'P'} });
+
+            // 12. Sensitivity Line Chart
+            if(res.sensitivity_data && res.sensitivity_data.length > 0) {
+                // Group by param
+                const params = [...new Set(res.sensitivity_data.map(d => d.param))];
+                const datasets = params.map((p, i) => {
+                    const subset = res.sensitivity_data.filter(d => d.param === p);
+                    return {
+                        label: p,
+                        data: subset.map(d => d.profit_change_pct),
+                        borderColor: colors[i % colors.length],
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.3
+                    };
+                });
+                
+                // Labels
+                const labels = res.sensitivity_data.filter(d => d.param === params[0]).map(d => d.change_pct);
+
+                drawChart('sensLineChart', {
+                    type: 'line',
+                    data: { labels: labels, datasets: datasets },
+                    options: { 
+                        ...common, 
+                        plugins: { legend: { position:'bottom', labels: { boxWidth: 10 } } },
+                        scales: { 
+                            x: {title: {display:true, text:'Change %'}}, 
+                            y: {title: {display:true, text:'Profit Impact %'}} 
+                        }
+                    }
+                });
+
+                // 13. Sens Table
+                const tbody = document.querySelector('#sensTable tbody');
+                tbody.innerHTML = res.sensitivity_data.map(d => `<tr><td>${d.param}</td><td>${d.change_pct}%</td><td style="color:${d.profit_change_pct>=0?'green':'red'}">${d.profit_change_pct.toFixed(2)}%</td></tr>`).join('');
+            }
+        }
+
+        function drawChart(id, config) {
+            const ctx = document.getElementById(id).getContext('2d');
+            if(charts[id]) charts[id].destroy();
+            charts[id] = new Chart(ctx, config);
+        }
+    </script>
+
+    <py-script>
+from js import window, Object, console
+from pyodide.ffi import to_js
+import numpy as np
+from scipy.optimize import differential_evolution, minimize
+
+FULL_SOURCE_CODE = """
+import numpy as np
+from scipy.optimize import differential_evolution
+
+# 1. 新鮮度函數 (Freshness Decay)
+def freshness(t, r, theta):
+    return np.exp(-theta * t / r)
+
+# 2. 訂閱需求函數 (Subscription Demand)
+def ds(M, a1, b1, m):
+    # 修正：增強 CRM 的邊際效應
+    return a1 + b1 * (M ** m)
+
+# 3. 零售需求函數 (Retail Demand)
+def dr(p, t, a2, b2, r, theta):
+    return (a2 - b2 * p) * freshness(t, r, theta)
+
+# 4. 訂閱價格 (Subscription Price)
+def ps(p, beta):
+    return (1.0 - beta) * p
+
+# 5. 訂閱訂購量 (Subscription Order Qty)
+def Qs(M, T, a1, b1, m):
+    return ds(M, a1, b1, m) * T
+
+# 6. 零售訂購量 (Retail Order Qty)
+def Qr(p, T, a2, b2, r, theta):
+    # 積分形式簡化 (需確保需求在週期內被滿足)
+    return (a2 - b2 * p) * (r / theta) * (1 - np.exp(-theta * T / r))
+
+# 7. 利息計算 (Interest Calculation)
+def calc_interest(p, M, T, params):
+    Q = Qs(M, T, params['a1'], params['b1'], params['m']) + Qr(p, T, params['a2'], params['b2'], params['r'], params['theta'])
+    Es, G, Ie, Ic, c = params['Es'], params['G'], params['Ie'], params['Ic'], params['c']
+    earn, paid = 0.0, 0.0
+    
+    # 兩階段信用交易邏輯 (Two-stage Credit)
+    if Es <= G:
+        paid = Ic * c * Q * (T - Es) if T > Es else 0.0
+    else:
+        earn = Ie * p * Q * (Es - G - T / 2) if T + G <= Es else Ie * p * Q * (Es - G)
+        paid = Ic * c * Q * (T + G - Es) / 2 if T + G > Es else 0.0
+    return earn, paid
+
+# 8. 總利潤函數 (Total Profit Function)
+def TP(p, M, T, params, carbon_tax=0):
+    if T < 0.1: T = 0.1
+    Qs_val = Qs(M, T, params['a1'], params['b1'], params['m'])
+    Qr_val = Qr(p, T, params['a2'], params['b2'], params['r'], params['theta'])
+    Q = Qs_val + Qr_val
+    rev = ps(p, params['beta']) * Qs_val + p * Qr_val
+    
+    c_pur = params['c'] * Q
+    c_ord = params['s']
+    c_trans = params['Kf'] + params['Kv'] * Q
+    c_crm = M * T
+    c_hold = params['h'] * Q * T / 2
+    
+    # 碳排放模擬 (Carbon Emission Simulation)
+    emissions = Q * 0.5 + Q * 0.1 
+    c_carbon = emissions * carbon_tax
+    
+    iE, iP = calc_interest(p, M, T, params)
+    
+    return (rev - c_pur - c_ord - c_trans - c_crm - c_hold - c_carbon + iE - iP) / T
+"""
+
+# Execute the code to define functions in scope
+exec(FULL_SOURCE_CODE)
+
+def run_optimization(params_js, sens_config_js):
+    try:
+        # Parse params
+        params = {}
+        keys = ['a1', 'b1', 'm', 'a2', 'b2', 'c', 's', 'h', 'Kf', 'Kv', 'beta', 'Es', 'G', 'Ic', 'Ie', 'r', 'theta']
+        for k in keys: params[k] = float(getattr(params_js, k))
+        
+        # Optimization
+        def obj(x):
+            if x[0] <= params['c']: return 1e10
+            return -TP(x[0], x[1], x[2], params)
+            
+        bounds = [(params['c']*1.05, params['a2']/params['b2']), (0, 500), (1, 60)]
+        res = differential_evolution(obj, bounds, maxiter=1000, popsize=15, tol=0.01, seed=42)
+        
+        op, oM, oT = float(res.x[0]), float(res.x[1]), float(res.x[2])
+        max_prof = float(-res.fun)
+        
+        # Base Data
+        oQs = Qs(oM, oT, params['a1'], params['b1'], params['m'])
+        oQr = Qr(op, oT, params['a2'], params['b2'], params['r'], params['theta'])
+        oQ = oQs + oQr
+        iE, iP = calc_interest(op, oM, oT, params)
+        
+        daily_rev = (ps(op, params['beta'])*oQs + op*oQr + iE) / oT
+        
+        costs = [
+            {'label': 'Purchase', 'value': (params['c']*oQ)/oT},
+            {'label': 'Ordering', 'value': params['s']/oT},
+            {'label': 'Transport', 'value': (params['Kf']+params['Kv']*oQ)/oT},
+            {'label': 'CRM', 'value': oM},
+            {'label': 'Holding', 'value': (params['h']*oQ*oT/2)/oT},
+            {'label': 'Interest', 'value': iP/oT}
+        ]
+        daily_cost = sum(x['value'] for x in costs)
+        
+        # --- Generating Chart Data ---
+        
+        # Monthly
+        m_data = [{'month':f'M{m}', 'rev':daily_rev*30, 'cost':daily_cost*30, 'prof':(daily_rev-daily_cost)*30} for m in range(1, 13)]
+        
+        # Inventory
+        inv_t, inv_q = [], []
+        for cycle in range(3):
+            ts = np.linspace(0, oT, 30)
+            for t in ts:
+                inv_t.append(round(cycle*oT + t, 1))
+                inv_q.append(max(0, oQ - (oQ/oT)*t))
+        inv_data = {'t': inv_t, 'q': inv_q}
+        
+        # Cycle Analysis
+        cyc_t = np.linspace(1, 60, 30)
+        cyc_h = [(params['h']*oQ*t/2)/t for t in cyc_t]
+        cyc_i = [calc_interest(op, oM, t, params)[1]/t for t in cyc_t]
+        cycle_data = {'t': cyc_t.tolist(), 'h_cost': cyc_h, 'interest': cyc_i}
+        
+        # Freshness
+        fr_t = np.linspace(0, params['r'], 20)
+        fr_v = [freshness(t, params['r'], params['theta']) for t in fr_t]
+        fresh_data = {'t': fr_t.tolist(), 'val': fr_v}
+        
+        # Price
+        pr_range = np.linspace(op*0.7, op*1.3, 20)
+        pr_prof = [TP(p, oM, oT, params) for p in pr_range]
+        pr_dem = [dr(p, 0, params['a2'], params['b2'], params['r'], params['theta']) for p in pr_range]
+        price_data = {'p': pr_range.tolist(), 'prof': pr_prof, 'dem': pr_dem}
+        
+        # CRM
+        crm_m = np.linspace(0, 500, 20)
+        crm_prof = [TP(op, m, oT, params) for m in crm_m]
+        crm_dem = [ds(m, params['a1'], params['b1'], params['m']) for m in crm_m]
+        crm_data = {'m': crm_m.tolist(), 'prof': crm_prof, 'dem': crm_dem}
+        
+        # Credit
+        cr_t = np.linspace(1, 60, 40)
+        cr_net, cr_earn, cr_paid = [], [], []
+        for t in cr_t:
+            e, p = calc_interest(op, oM, t, params)
+            cr_earn.append(e/t)
+            cr_paid.append(p/t)
+            cr_net.append((e-p)/t)
+        credit_data = {'t': cr_t.tolist(), 'net': cr_net, 'earn': cr_earn, 'paid': cr_paid}
+        
+        # Carbon
+        tax_range = np.linspace(0, 10, 20)
+        carb_prof = [TP(op, oM, oT, params, tax) for tax in tax_range]
+        carbon_data = {'tax': tax_range.tolist(), 'prof': carb_prof}
+        
+        # Heatmap
+        hm_p = np.linspace(op*0.8, op*1.2, 10)
+        hm_m = np.linspace(max(0, oM*0.5), oM*1.5, 10)
+        hm_z = [[TP(p, m, oT, params) for m in hm_m] for p in hm_p]
+        heatmap_data = {'x': hm_m.tolist(), 'y': hm_p.tolist(), 'z': hm_z}
+        
+        # Sensitivity (Full)
+        sensitivity_data = []
+        if sens_config_js:
+            rng = float(getattr(sens_config_js, 'range'))
+            step = float(getattr(sens_config_js, 'step'))
+            points = []
+            curr = -rng
+            while curr <= rng + 0.001:
+                if abs(curr) > 0.001: points.append(curr)
+                curr += step
+            
+            all_params = list(params.keys())
+            
+            for k in all_params:
+                base = params[k]
+                for pct in points:
+                    test_p = params.copy()
+                    test_p[k] = base * (1 + pct/100)
+                    
+                    # Local optimization for speed
+                    def obj_s(x): return -TP(x[0], x[1], x[2], test_p)
+                    res_s = minimize(obj_s, [op, oM, oT], bounds=[(params['c'], None), (0, 500), (0.1, 60)], method='L-BFGS-B')
+                    
+                    prof = float(-res_s.fun)
+                    change = (prof - max_prof)/max_prof * 100
+                    sensitivity_data.append({'param': k, 'change_pct': float(pct), 'profit_change_pct': float(change)})
+
+        res_obj = {
+            'optimal_p': op, 'optimal_M': oM, 'optimal_T': oT, 'optimal_ps': ps(op, params['beta']),
+            'max_profit': max_prof, 'total_Q': float(oQ), 'total_carbon': float(oQ * 0.6),
+            'daily_revenue': daily_rev, 'daily_cost': daily_cost,
+            'sub_demand': ds(oM, params['a1'], params['b1'], params['m']),
+            'sub_Q': float(oQs), 'retail_Q': float(oQr),
+            'cost_breakdown': costs, 'monthly_data': m_data,
+            'inv_data': inv_data, 'cycle_data': cycle_data,
+            'fresh_data': fresh_data, 'price_data': price_data,
+            'crm_data': crm_data, 'credit_data': credit_data,
+            'carbon_data': carbon_data, 'heatmap_data': heatmap_data,
+            'sensitivity_data': sensitivity_data
+        }
+        
+        window.updateDashboard(to_js(res_obj, dict_converter=Object.fromEntries))
+        
+    except Exception as e:
+        console.error(f"PyError: {e}")
+
+def get_code():
+    return FULL_SOURCE_CODE
+
+window.py_run = run_optimization
+window.py_get_code = get_code
+window.pythonReady()
+    </py-script>
+</body>
+</html>
