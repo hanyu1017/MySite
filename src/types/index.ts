@@ -34,6 +34,7 @@ export interface Profile {
   skills: string[]
   education?: any
   experience?: any
+  certifications?: any
 }
 
 export interface Analytics {
