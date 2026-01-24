@@ -8,13 +8,29 @@ export interface AnalyticsEvent {
   metadata?: Record<string, any>
   userAgent?: string
   ipAddress?: string
+  trackingSession?: string  // 新增：追蹤 session
 }
 
 export async function trackEvent(data: AnalyticsEvent) {
   try {
+    let linkClickId: string | undefined = undefined
+
+    // 如果有 trackingSession，查找對應的 LinkClick
+    if (data.trackingSession) {
+      const linkClick = await prisma.linkClick.findUnique({
+        where: { sessionId: data.trackingSession },
+        select: { id: true },
+      })
+
+      if (linkClick) {
+        linkClickId = linkClick.id
+      }
+    }
+
     await prisma.analytics.create({
       data: {
         userId: data.userId || null,
+        linkClickId,  // 關聯到 LinkClick（如果有）
         event: data.event,
         page: data.page,
         target: data.target,

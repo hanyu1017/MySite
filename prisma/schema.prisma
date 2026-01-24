@@ -70,6 +70,7 @@ model Project {
 model Analytics {
   id          String   @id @default(cuid())
   userId      String?
+  linkClickId String?  // 關聯到短網址點擊（如果此事件來自短網址追蹤）
   event       String   // 事件類型: page_view, project_click, link_click 等
   page        String?  // 頁面路徑
   target      String?  // 目標元素（如專案ID、連結URL）
@@ -80,9 +81,11 @@ model Analytics {
   city        String?
   createdAt   DateTime @default(now())
 
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  linkClick   LinkClick? @relation(fields: [linkClickId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([linkClickId])
   @@index([event])
   @@index([createdAt])
 }
@@ -129,6 +132,7 @@ model TrackedLink {
 model LinkClick {
   id          String   @id @default(cuid())
   linkId      String
+  sessionId   String   @unique  // 追蹤 session，用於關聯後續操作
   ipAddress   String?
   userAgent   String?
   referer     String?
@@ -137,7 +141,9 @@ model LinkClick {
   createdAt   DateTime @default(now())
 
   link        TrackedLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  analytics   Analytics[]  // 關聯到此次點擊後的所有分析事件
 
   @@index([linkId])
+  @@index([sessionId])
   @@index([createdAt])
 }

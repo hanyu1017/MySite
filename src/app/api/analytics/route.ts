@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
     const body = await request.json()
 
-    const { event, page, target, metadata } = body
+    const { event, page, target, metadata, trackingSession } = body
 
     if (!event) {
       return NextResponse.json(
@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
       metadata,
       userAgent,
       ipAddress,
+      trackingSession,  // 傳遞 tracking session
     })
 
     return NextResponse.json({ success: true })

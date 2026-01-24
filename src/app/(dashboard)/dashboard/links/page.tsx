@@ -6,8 +6,17 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Plus, Edit2, Trash2, ExternalLink, Copy, Eye, EyeOff, BarChart3, ChevronDown, ChevronUp, Download } from 'lucide-react'
+import { Plus, Edit2, Trash2, ExternalLink, Copy, Eye, EyeOff, BarChart3, ChevronDown, ChevronUp, Download, MousePointerClick, FileText } from 'lucide-react'
 import * as XLSX from 'xlsx'
+
+interface AnalyticsEvent {
+  id: string
+  event: string
+  page: string | null
+  target: string | null
+  metadata: any
+  createdAt: Date
+}
 
 interface LinkClick {
   id: string
@@ -17,6 +26,7 @@ interface LinkClick {
   country: string | null
   city: string | null
   createdAt: Date
+  analytics?: AnalyticsEvent[]  // 該次點擊後的所有操作
 }
 
 interface TrackedLink {
@@ -33,6 +43,14 @@ interface TrackedLink {
     clickEvents: number
   }
   clickEvents?: LinkClick[]
+}
+
+// 事件類型中文映射
+const EVENT_TYPE_MAP: Record<string, string> = {
+  'page_view': '瀏覽頁面',
+  'project_click': '點擊專案',
+  'link_click': '點擊連結',
+  'button_click': '按鈕點擊',
 }
 
 export default function LinksManagementPage() {
@@ -153,40 +171,76 @@ export default function LinksManagementPage() {
       return
     }
 
-    const data = link.clickEvents.map((click, index) => ({
-      '序號': index + 1,
-      '點擊時間': new Date(click.createdAt).toLocaleString('zh-TW', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      }),
-      'IP 位址': click.ipAddress || '未知',
-      '國家': click.country || '未知',
-      '城市': click.city || '未知',
-      '瀏覽器資訊': click.userAgent || '未知',
-      '來源頁面': click.referer || '直接訪問',
-    }))
+    const data: any[] = []
+
+    link.clickEvents.forEach((click, clickIndex) => {
+      // 添加點擊記錄
+      data.push({
+        '序號': clickIndex + 1,
+        '類型': '短網址點擊',
+        '點擊時間': new Date(click.createdAt).toLocaleString('zh-TW', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        }),
+        'IP 位址': click.ipAddress || '未知',
+        '國家': click.country || '未知',
+        '城市': click.city || '未知',
+        '瀏覽器資訊': click.userAgent || '未知',
+        '來源頁面': click.referer || '直接訪問',
+        '操作內容': '點擊短網址',
+        '目標頁面/元素': link.url,
+      })
+
+      // 添加後續操作記錄
+      if (click.analytics && click.analytics.length > 0) {
+        click.analytics.forEach((event, eventIndex) => {
+          data.push({
+            '序號': `${clickIndex + 1}.${eventIndex + 1}`,
+            '類型': '後續操作',
+            '點擊時間': new Date(event.createdAt).toLocaleString('zh-TW', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            }),
+            'IP 位址': click.ipAddress || '未知',
+            '國家': click.country || '未知',
+            '城市': click.city || '未知',
+            '瀏覽器資訊': click.userAgent || '未知',
+            '來源頁面': '-',
+            '操作內容': EVENT_TYPE_MAP[event.event] || event.event,
+            '目標頁面/元素': event.page || event.target || '-',
+          })
+        })
+      }
+    })
 
     const ws = XLSX.utils.json_to_sheet(data)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, '點擊記錄')
+    XLSX.utils.book_append_sheet(wb, ws, '完整使用者旅程')
 
     // 設定欄寬
     const colWidths = [
-      { wch: 8 },  // 序號
+      { wch: 10 }, // 序號
+      { wch: 12 }, // 類型
       { wch: 20 }, // 點擊時間
       { wch: 15 }, // IP 位址
       { wch: 12 }, // 國家
       { wch: 12 }, // 城市
       { wch: 50 }, // 瀏覽器資訊
-      { wch: 40 }, // 來源頁面
+      { wch: 30 }, // 來源頁面
+      { wch: 15 }, // 操作內容
+      { wch: 40 }, // 目標頁面/元素
     ]
     ws['!cols'] = colWidths
 
-    const fileName = `${link.title}_點擊記錄_${new Date().toISOString().split('T')[0]}.xlsx`
+    const fileName = `${link.title}_完整使用者旅程_${new Date().toISOString().split('T')[0]}.xlsx`
     XLSX.writeFile(wb, fileName)
   }
 
@@ -204,7 +258,7 @@ export default function LinksManagementPage() {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">連結追蹤管理</h1>
-            <p className="text-gray-600 mt-1 text-sm">管理您的追蹤連結並查看點擊統計</p>
+            <p className="text-gray-600 mt-1 text-sm">管理您的追蹤連結並查看完整使用者旅程</p>
           </div>
           <Button onClick={() => setShowForm(true)} size="sm">
             <Plus size={18} className="mr-2" />
@@ -289,7 +343,7 @@ export default function LinksManagementPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => toggleExpand(link.id)}
-                    title="查看記錄"
+                    title="查看旅程"
                   >
                     {expandedLinkId === link.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </Button>
@@ -368,11 +422,11 @@ export default function LinksManagementPage() {
                     </div>
                   </div>
 
-                  {/* 展開的操作記錄 */}
+                  {/* 展開的使用者旅程 */}
                   {expandedLinkId === link.id && (
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-gray-900">操作記錄</h4>
+                        <h4 className="text-sm font-semibold text-gray-900">完整使用者旅程</h4>
                         {link.clickEvents && link.clickEvents.length > 0 && (
                           <Button
                             variant="outline"
@@ -390,57 +444,100 @@ export default function LinksManagementPage() {
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                         </div>
                       ) : link.clickEvents && link.clickEvents.length > 0 ? (
-                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                        <div className="space-y-4 max-h-96 overflow-y-auto">
                           {link.clickEvents.map((click, index) => (
-                            <div
-                              key={click.id}
-                              className="p-3 bg-gray-50 rounded-lg text-xs"
-                            >
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <span className="text-gray-600">點擊時間：</span>
-                                  <span className="text-gray-900 font-medium">
-                                    {new Date(click.createdAt).toLocaleString('zh-TW', {
-                                      year: 'numeric',
-                                      month: '2-digit',
-                                      day: '2-digit',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      second: '2-digit',
-                                    })}
-                                  </span>
+                            <div key={click.id} className="border-l-4 border-blue-500 pl-4">
+                              {/* 初始點擊 */}
+                              <div className="flex items-start gap-2 mb-2">
+                                <MousePointerClick size={16} className="text-blue-600 mt-0.5" />
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-xs font-semibold text-blue-700">
+                                      點擊 #{index + 1}
+                                    </span>
+                                    <span className="text-xs text-gray-600">
+                                      {new Date(click.createdAt).toLocaleString('zh-TW', {
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                      <span className="text-gray-600">IP：</span>
+                                      <span className="text-gray-900">{click.ipAddress || '未知'}</span>
+                                    </div>
+                                    {(click.country || click.city) && (
+                                      <div>
+                                        <span className="text-gray-600">位置：</span>
+                                        <span className="text-gray-900">
+                                          {[click.country, click.city].filter(Boolean).join(', ')}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {click.referer && (
+                                      <div className="col-span-2">
+                                        <span className="text-gray-600">來源：</span>
+                                        <span className="text-gray-900 truncate block">{click.referer}</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                                <div>
-                                  <span className="text-gray-600">IP 位址：</span>
-                                  <span className="text-gray-900 font-medium">
-                                    {click.ipAddress || '未知'}
-                                  </span>
-                                </div>
-                                {(click.country || click.city) && (
-                                  <div>
-                                    <span className="text-gray-600">位置：</span>
-                                    <span className="text-gray-900 font-medium">
-                                      {[click.country, click.city].filter(Boolean).join(', ') || '未知'}
-                                    </span>
-                                  </div>
-                                )}
-                                {click.referer && (
-                                  <div>
-                                    <span className="text-gray-600">來源：</span>
-                                    <span className="text-gray-900 font-medium truncate block">
-                                      {click.referer}
-                                    </span>
-                                  </div>
-                                )}
-                                {click.userAgent && (
-                                  <div className="col-span-2">
-                                    <span className="text-gray-600">瀏覽器：</span>
-                                    <span className="text-gray-900 font-medium truncate block">
-                                      {click.userAgent}
-                                    </span>
-                                  </div>
-                                )}
                               </div>
+
+                              {/* 後續操作 */}
+                              {click.analytics && click.analytics.length > 0 && (
+                                <div className="ml-6 mt-2 space-y-2 border-l-2 border-gray-300 pl-4">
+                                  <div className="flex items-center gap-1 text-xs font-semibold text-gray-700 mb-2">
+                                    <FileText size={12} />
+                                    <span>後續操作（{click.analytics.length} 個事件）</span>
+                                  </div>
+                                  {click.analytics.map((event, eventIndex) => (
+                                    <div key={event.id} className="p-2 bg-gray-50 rounded text-xs">
+                                      <div className="flex items-center justify-between mb-1">
+                                        <span className="font-medium text-gray-900">
+                                          {EVENT_TYPE_MAP[event.event] || event.event}
+                                        </span>
+                                        <span className="text-gray-500">
+                                          {new Date(event.createdAt).toLocaleTimeString('zh-TW', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            second: '2-digit',
+                                          })}
+                                        </span>
+                                      </div>
+                                      {event.page && (
+                                        <div className="text-gray-600">
+                                          <span>頁面：</span>
+                                          <span className="text-gray-900">{event.page}</span>
+                                        </div>
+                                      )}
+                                      {event.target && (
+                                        <div className="text-gray-600">
+                                          <span>目標：</span>
+                                          <span className="text-gray-900">{event.target}</span>
+                                        </div>
+                                      )}
+                                      {event.metadata && Object.keys(event.metadata).length > 0 && (
+                                        <div className="text-gray-600 mt-1">
+                                          <span>詳情：</span>
+                                          <span className="text-gray-900">
+                                            {JSON.stringify(event.metadata)}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {(!click.analytics || click.analytics.length === 0) && (
+                                <div className="ml-6 mt-2 text-xs text-gray-500 italic">
+                                  點擊後無後續操作記錄
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
