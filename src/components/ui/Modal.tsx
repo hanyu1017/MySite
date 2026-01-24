@@ -48,42 +48,43 @@ export function Modal({ isOpen, onClose, children, title, maxWidth = '2xl' }: Mo
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm"
+      className="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
       onClick={onClose}
-      style={{ margin: 0, padding: '1rem' }}
     >
-      <div
-        className={`relative bg-white rounded-2xl shadow-2xl w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] flex flex-col animate-modal-in`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 標題列 */}
-        {title && (
-          <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-            <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+      <div className="w-full max-w-4xl mx-4">
+        <div
+          className={`bg-white rounded-2xl shadow-2xl ${maxWidthClasses[maxWidth]} max-h-[90vh] flex flex-col animate-modal-in mx-auto`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* 標題列 */}
+          {title && (
+            <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="關閉"
+              >
+                <X size={24} className="text-gray-600" />
+              </button>
+            </div>
+          )}
+
+          {/* 無標題時的關閉按鈕 */}
+          {!title && (
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="absolute top-4 right-4 z-10 p-2 hover:bg-gray-100 rounded-lg transition-colors bg-white shadow-md"
               aria-label="關閉"
             >
               <X size={24} className="text-gray-600" />
             </button>
+          )}
+
+          {/* 內容 - 可滾動 */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {children}
           </div>
-        )}
-
-        {/* 無標題時的關閉按鈕 */}
-        {!title && (
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-10 p-2 hover:bg-gray-100 rounded-lg transition-colors bg-white shadow-md"
-            aria-label="關閉"
-          >
-            <X size={24} className="text-gray-600" />
-          </button>
-        )}
-
-        {/* 內容 - 可滾動 */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {children}
         </div>
       </div>
     </div>
