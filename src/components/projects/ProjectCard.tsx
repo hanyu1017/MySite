@@ -8,19 +8,17 @@ import type { Project } from '@/types'
 
 interface ProjectCardProps {
   project: Project
-  onClick?: () => void
 }
 
-export function ProjectCard({ project, onClick }: ProjectCardProps) {
-  const handleCardClick = () => {
-    trackEvent('project_view', undefined, project.id, {
+export function ProjectCard({ project }: ProjectCardProps) {
+  const handleClick = () => {
+    trackEvent('project_click', undefined, project.id, {
       title: project.title,
     })
-    onClick?.()
   }
 
   return (
-    <Card hover className="h-full flex flex-col cursor-pointer" onClick={handleCardClick}>
+    <Card hover className="h-full flex flex-col" onClick={handleClick}>
       {project.thumbnail && (
         <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden">
           <Image
