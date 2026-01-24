@@ -27,6 +27,11 @@ export async function GET(request: NextRequest, { params }: Params) {
         clickEvents: {
           orderBy: { createdAt: 'desc' },
           take: 100,
+          include: {
+            analytics: {
+              orderBy: { createdAt: 'asc' },
+            },
+          },
         },
         _count: {
           select: { clickEvents: true }
